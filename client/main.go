@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 
@@ -85,18 +86,8 @@ func (s *ClientServeObject) Test(ctx context.Context, _ *pb.TestRequest) (*pb.Te
 	ctx, span := tracer.Tracer("client").Start(ctx, "Test")
 	defer span.End()
 
-	// Extract username from incoming context
-	var username string
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		val := md["username"]
-		if len(val) > 0 {
-			username = val[0]
-		}
-	}
-
-	// Append username to outgoing context
-	ctx = metadata.AppendToOutgoingContext(ctx, "username", username)
+	traceId := fmt.Sprintf("%s", span.SpanContext().TraceID())
+	ctx = metadata.AppendToOutgoingContext(ctx, "x-trace-id", traceId)
 
 	// Create a connection to the server
 	conn, err := grpc.DialContext(ctx, "localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))

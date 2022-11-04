@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
@@ -81,20 +82,25 @@ type ServerServeObject struct {
 
 // Test Implement a only endpoint
 func (s *ServerServeObject) Test(ctx context.Context, _ *pb.TestRequest) (*pb.TestResponse, error) {
+	// Extract TraceID from header
+	md, _ := metadata.FromIncomingContext(ctx)
+	traceIdString := md["x-trace-id"][0]
+	// Convert string to byte array
+	traceId, err := trace.TraceIDFromHex(traceIdString)
+	if err != nil {
+		return nil, err
+	}
+	// Creating a span context with a predefined trace-id
+	spanContext := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: traceId,
+	})
+	// Embedding span config into the context
+	ctx = trace.ContextWithSpanContext(ctx, spanContext)
+
 	ctx, span := tracer.Tracer("server").Start(ctx, "Test")
 	defer span.End()
 
-	// Extract username from incoming context
-	var username string
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		val := md["username"]
-		if len(val) > 0 {
-			username = val[0]
-		}
-	}
-
 	return &pb.TestResponse{
-		Message: "Server response: " + username,
+		Message: "Server response",
 	}, nil
 }
