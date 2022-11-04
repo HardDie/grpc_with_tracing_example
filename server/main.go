@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
 	pb "github.com/HardDie/grpc_with_tracing_example/pkg/server"
@@ -45,8 +46,18 @@ type ServerServeObject struct {
 }
 
 // Test Implement a only endpoint
-func (s *ServerServeObject) Test(_ context.Context, _ *pb.TestRequest) (*pb.TestResponse, error) {
+func (s *ServerServeObject) Test(ctx context.Context, _ *pb.TestRequest) (*pb.TestResponse, error) {
+	// Extract username from incoming context
+	var username string
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		val := md["username"]
+		if len(val) > 0 {
+			username = val[0]
+		}
+	}
+
 	return &pb.TestResponse{
-		Message: "Server response",
+		Message: "Server response: " + username,
 	}, nil
 }

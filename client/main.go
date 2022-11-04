@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
 	pb "github.com/HardDie/grpc_with_tracing_example/pkg/client"
@@ -48,6 +49,19 @@ type ClientServeObject struct {
 
 // Test Implement a only endpoint
 func (s *ClientServeObject) Test(ctx context.Context, _ *pb.TestRequest) (*pb.TestResponse, error) {
+	// Extract username from incoming context
+	var username string
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		val := md["username"]
+		if len(val) > 0 {
+			username = val[0]
+		}
+	}
+
+	// Append username to outgoing context
+	ctx = metadata.AppendToOutgoingContext(ctx, "username", username)
+
 	// Create a connection to the server
 	conn, err := grpc.DialContext(ctx, "localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
