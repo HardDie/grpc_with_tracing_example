@@ -1,0 +1,18 @@
+syntax = "proto3";
+package client;
+option go_package = "github.com/HardDie/grpc_with_tracing_example/pkg/client";
+
+service Client
+{
+    rpc Test(TestRequest) returns (TestResponse)
+    {
+    }
+}
+
+message TestRequest
+{
+}
+message TestResponse
+{
+    string message = 1;
+}
